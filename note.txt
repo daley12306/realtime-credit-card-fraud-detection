@@ -1,0 +1,38 @@
+0. Tạo maven project (tạo rồi không cần tạo nữa)
+mvn archetype:generate "-DgroupId=com.nhom7.spark" "-DartifactId=app" "-DarchetypeArtifactId=maven-archetype-quickstart" "-DinteractiveMode=false"
+
+Cấu trúc thư mục
+credit-card-fraud-detector/
+└─ src/main/java/com/nhom7/spark/
+   ├─ app/
+   │   └─ Application.java                  # Wire DI + spark-submit entrypoint         <-- 2. Thêm rule vào đoạn RuleEngine
+   ├─ stream/
+   │   ├─ StreamingJob.java                 # Tạo DStream, parse Kafka, call engine
+   │   ├─ StateUpdater.java                 # updateStateByKey (nếu dùng state)
+   │   └─ KafkaConfig.java                  # Kafka params builder
+   ├─ model/
+   │   ├─ Transaction.java                  # POJO giao dịch
+   │   ├─ Alert.java                        # POJO cảnh báo
+   │   └─ UserState.java                    # State tối thiểu
+   ├─ parsing/
+   │   └─ TransactionParser.java            # Parse JSON -> Transaction
+   ├─ rules/      <-- 1. Thêm rule vào file này
+   │   ├─ Rule.java                         # interface
+   │   ├─ HighAmountRule.java               # amount > lastAverageSpend       <-- 1. Tham khảo
+   │   └─ RuleEngine.java                   # hợp nhất nhiều rule
+   └─ sinks/
+       ├─ AlertSink.java                    # interface
+       ├─ ConsoleAlertSink.java             # in ra console
+       └─ MongoAlertSink.java               # (stub) nối Mongo sau
+
+3. Build lại project trước khi chạy (sửa code thì build lại, nhớ cd vô app)
+mvn clean compile package -DskipTests
+
+4. Chạy code
+docker exec -it spark-master spark-submit --master spark://spark-master:7077 --conf spark.executor.memory=1g --packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.4 --class com.nhom7.spark.app.Application /opt/bitnami/spark/apps/target/app-1.0-SNAPSHOT.jar
+
+5. Check output
+Truy cập http://localhost:8081/ --> chọn stdout --> Nhìn vào thành địa chỉ đổi spark-worker -> localhost
+
+6. Check error
+Truy cập http://localhost:8081/ --> chọn stderr --> Nhìn vào thành địa chỉ đổi spark-worker -> localhost
