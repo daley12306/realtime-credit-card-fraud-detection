@@ -5,6 +5,7 @@ import com.nhom7.spark.rules.RuleEngine;
 import com.nhom7.spark.sinks.AlertSink;
 import com.nhom7.spark.sinks.ConsoleAlertSink;
 import com.nhom7.spark.stream.StreamingJob;
+import com.nhom7.spark.rules.DeviceChangeRule;
 
 import java.util.Arrays;
 
@@ -17,8 +18,9 @@ public final class Application {
         int    batch  = Integer.parseInt(env("BATCH_INTERVAL", "1"));
 
         RuleEngine engine = new RuleEngine(Arrays.asList(
-                new HighAmountRule(20.0)
+                new HighAmountRule(20.0),
                 // thêm rule khác ở đây (DeviceChangeRule, GeoVelocityRule, v.v.)
+                new DeviceChangeRule(true)
         ));
         AlertSink sink = new ConsoleAlertSink();
 
