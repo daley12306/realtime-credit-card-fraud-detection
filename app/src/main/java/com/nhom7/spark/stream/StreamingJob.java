@@ -6,17 +6,17 @@ import com.nhom7.spark.models.UserState;
 import com.nhom7.spark.parsing.TransactionParser;
 import com.nhom7.spark.rules.RuleEngine;
 import com.nhom7.spark.sinks.AlertSink;
+import com.nhom7.spark.sinks.MongoSink;
+import com.nhom7.spark.sinks.TransactionSink;
 
 import scala.Tuple2;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.SparkConf;
 import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.State;
-import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.*;
 import org.apache.spark.streaming.kafka010.*;
+import org.apache.spark.api.java.Optional;
 
 import java.io.Serializable;
 import java.util.*;
@@ -66,43 +66,33 @@ public final class StreamingJob implements Serializable{
             return new Tuple2<>(txn.getUserId(), txn);
         });
 
-        final RuleEngine engine = this.ruleEngine; // implements Serializable
+        final RuleEngine engine = this.ruleEngine;
         final AlertSink  sink   = this.sink;
 
-        org.apache.spark.api.java.function.Function3<
-        String,                      // key = userId
-        org.apache.spark.api.java.Optional<Transaction>,  // event ở batch này (có thể trống khi timeout)
-        State<UserState>,            // state hiện tại
-        List<Alert>                  // KẾT QUẢ phát ra cho stream output
-    > mappingFunction = (userId, maybeTxn, state) -> {
+        JavaPairDStream<String, UserState> userStates = events
+            .updateStateByKey((newTransactions, existingState) -> {
+                UserState st = existingState.orElse(UserState.empty());
+                for (Transaction txn : newTransactions) {
+                    List<Alert> alerts = engine.evaluateAll(txn, st);
+                    for (Alert alert : alerts) {
+                        sink.send(alert);
+                    }
+                    
+                    st.updateUserState(txn, st);
+                }
+                return Optional.of(st);
+            });
+        
+        userStates.print();
 
-        UserState st = state.exists() ? state.get() : UserState.empty();
+        // Sink transactions to MongoDB
+        JavaDStream<Transaction> txStream = stream.map(ConsumerRecord::value).map(TransactionParser::fromJson);
+        final String uri = System.getenv().getOrDefault("MONGO_URI", "mongodb://mongo:27017");
+        final String db  = System.getenv().getOrDefault("MONGO_DB", "frauddb");
+        final String col = System.getenv().getOrDefault("MONGO_COLL_TX", "transactions");
 
-        if (!maybeTxn.isPresent()) {
-            if (state.isTimingOut()) {
-            }
-            return java.util.Collections.emptyList();
-        }
-
-        Transaction txn = maybeTxn.get();
-
-        List<Alert> alerts = engine.evaluateAll(txn, st);
-        st.updateUserState(txn, st);
-        state.update(st);
-        return alerts;
-    };
-
-    StateSpec<String, Transaction, UserState, List<Alert>> spec =
-        StateSpec.function(mappingFunction)
-                 .timeout(Durations.minutes(30)); // tuỳ: TTL per user
-
-    JavaMapWithStateDStream<String, Transaction, UserState, List<Alert>> alertStream =
-        events.mapWithState(spec);
-
-    alertStream.foreachRDD(rdd -> {
-        rdd.flatMap(list -> list.iterator())
-           .foreach(a -> sink.send(a));
-    });
+        TransactionSink txSink = new MongoSink(uri, db, col);
+        txStream.foreachRDD(txSink::write);
 
         jssc.start();
         jssc.awaitTermination();
