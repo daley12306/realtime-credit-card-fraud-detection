@@ -86,16 +86,17 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  redis:
-    image: redis:8.2.2-alpine
-    container_name: redis
+  metabase:
+    image: metabase/metabase:v0.53.x
+    container_name: metabase
     restart: always
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
+      - "3000:3000"
+    environment:
+      - MB_DB_FILE=/metabase_data/metabase.db
     volumes:
-      - redis_data:/data
+      - metabase_data:/metabase_data
 
 volumes:
   mongo_data:
-  redis_data:
+  metabase_data:

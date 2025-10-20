@@ -42,3 +42,12 @@ Truy cập http://localhost:8081/ --> chọn stderr --> Nhìn vào thành địa
 2. show dbs
 3. use frauddb
 4. db.transactions.find()
+
+# Liệt kê tất cả các stream hiện có
+KEYS *
+
+# Xem toàn bộ event trong stream alerts
+XRANGE alerts - +
+
+# Hoặc chỉ xem 10 bản ghi cuối
+XREVRANGE alerts + - COUNT 10

@@ -9,7 +9,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.bson.Document;
 import java.util.*;
 
-public final class MongoSink implements TransactionSink {
+public final class MongoTransactionSink implements TransactionSink {
     private static final long serialVersionUID = 1L;
 
     private final String uri;
@@ -17,11 +17,11 @@ public final class MongoSink implements TransactionSink {
     private final String collection;
     private final int bulkSize;
 
-    public MongoSink(String uri, String db, String collection) {
+    public MongoTransactionSink(String uri, String db, String collection) {
         this(uri, db, collection, 1000);
     }
 
-    public MongoSink(String uri, String db, String collection, int bulkSize) {
+    public MongoTransactionSink(String uri, String db, String collection, int bulkSize) {
         this.uri = Objects.requireNonNull(uri);
         this.db = Objects.requireNonNull(db);
         this.collection = Objects.requireNonNull(collection);

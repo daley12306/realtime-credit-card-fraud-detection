@@ -6,7 +6,7 @@ import com.nhom7.spark.models.UserState;
 import com.nhom7.spark.parsing.TransactionParser;
 import com.nhom7.spark.rules.RuleEngine;
 import com.nhom7.spark.sinks.AlertSink;
-import com.nhom7.spark.sinks.MongoSink;
+import com.nhom7.spark.sinks.MongoTransactionSink;
 import com.nhom7.spark.sinks.TransactionSink;
 
 import scala.Tuple2;
@@ -91,7 +91,7 @@ public final class StreamingJob implements Serializable{
         final String db  = System.getenv().getOrDefault("MONGO_DB", "frauddb");
         final String col = System.getenv().getOrDefault("MONGO_COLL_TX", "transactions");
 
-        TransactionSink txSink = new MongoSink(uri, db, col);
+        TransactionSink txSink = new MongoTransactionSink(uri, db, col);
         txStream.foreachRDD(txSink::write);
 
         jssc.start();
