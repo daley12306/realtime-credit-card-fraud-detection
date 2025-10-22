@@ -1,13 +1,12 @@
 package com.nhom7.spark.app;
 
-import com.nhom7.spark.rules.HighAmountRule;
-import com.nhom7.spark.rules.Velocity10M;
-import com.nhom7.spark.rules.RuleEngine;
+import com.nhom7.spark.rules.*;
 import com.nhom7.spark.sinks.AlertSink;
 import com.nhom7.spark.sinks.ConsoleAlertSink;
 import com.nhom7.spark.sinks.MongoAlertSink;
 import com.nhom7.spark.stream.StreamingJob;
 
+import java.time.Duration;
 import java.util.Arrays;
 
 public final class Application {
@@ -19,11 +18,14 @@ public final class Application {
         int    batch  = Integer.parseInt(env("BATCH_INTERVAL", "1"));
 
         RuleEngine engine = new RuleEngine(Arrays.asList(
-                new HighAmountRule(20.0),
-                new Velocity10M(5)
-                // thêm rule khác ở đây (DeviceChangeRule, GeoVelocityRule, v.v.)
+                new HighAmountRule(10.0),
+                new Velocity10M(5),
+                new DeviceChangeRule(true),
+                new GeoVelocityRule(700),
+                new RapidDeclinesRule(2, Duration.ofSeconds(30))
         ));
-        // AlertSink sink = new ConsoleAlertSink();
+        
+        // AlertSink alertSink = new ConsoleAlertSink();
 
         final String mongoUri  = System.getenv().getOrDefault("MONGO_URI", "mongodb://mongo:27017");
         final String mongoDb   = System.getenv().getOrDefault("MONGO_DB", "frauddb");

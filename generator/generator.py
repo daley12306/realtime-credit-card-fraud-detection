@@ -90,10 +90,9 @@ def random_public_ip():
 
 def random_geo_in_vn():
     # lat range ~ 8 to 23, lon ~ 102 to 110 (approx Vietnam)
-    return {
-        "latitude": round(random.uniform(8.0, 23.0), 6),
-        "longitude": round(random.uniform(102.0, 110.0), 6)
-    }
+    lat = round(random.uniform(8.0, 23.0), 6)
+    lon = round(random.uniform(102.0, 110.0), 6)
+    return f"{lat},{lon}"
 
 # ------------------- Card allocation helper -------------------
 def ensure_user_has_card_for_bank(user_id, bank_name):
@@ -214,7 +213,7 @@ def generate_transaction(user_pool,
 
     tx = {
         "transaction_id": str(uuid.uuid4()),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "user_id": user_id,
         "user_home_region": user["home_region"],
         "user_home_province": user["home_province"],
@@ -233,7 +232,7 @@ def generate_transaction(user_pool,
         "geo_location": random_geo_in_vn(),
         "loyalty_points": user["loyalty_points"],
         "payment_method": "credit_card",
-        "transaction_status": random.choices(["approved", "pending", "declined"], weights=[0.9, 0.05, 0.05])[0]
+        "transaction_status": random.choices(["approved", "pending", "declined"], weights=[0.5, 0.05, 0.45])[0]
     }
 
     return tx

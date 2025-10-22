@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Objects;
 
 public class UserState implements Serializable {
@@ -73,5 +74,10 @@ public class UserState implements Serializable {
             recentTimestamps.pollFirst();
         }
         return recentTimestamps.size();
+    }
+
+    public List<Transaction> getRecentTransactions(long seconds) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRecentTransactions'");
     }
 }
